@@ -1,3 +1,4 @@
+from sklearn.model_selection import train_test_split
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
@@ -29,7 +30,7 @@ def extract_feature_with_decisiontree_old(df, removeNotImportantFeature=True):
     else:
         return feature_importance_df
 
-def extract_feature_with_decisiontree(df, target_column="target", removeNotImportantFeature=True):
+def extract_feature_with_decisiontree_simple(df, target_column="target", removeNotImportantFeature=True):
     # Estrai le colonne delle features e della variabile target
     features_columns = df.columns[:-1]
     
@@ -56,6 +57,42 @@ def extract_feature_with_decisiontree(df, target_column="target", removeNotImpor
     else:
         return feature_importance_df
 
+#  ha la parte di verifica
+def extract_feature_with_decisiontree(df, target_column="target", removeNotImportantFeature=True):
+    # Estrai le colonne delle features e della variabile target
+    features_columns = df.columns[:-1]
+    
+    # Estrai le colonne delle feature (X) e della variabile target (y)
+    X = df[features_columns]
+    y = df[target_column]
+
+    # Dividi il dataset in set di addestramento e set di verifica
+    # Il parametro test_size specifica la percentuale di dati da utilizzare per la verifica
+    # random_state è impostato per garantire la riproducibilità dei risultati
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Crea un modello di albero decisionale
+    clf = DecisionTreeClassifier(random_state=42)
+
+    # Addestra il modello sul set di addestramento
+    clf.fit(X_train, y_train)
+
+    # Valuta le prestazioni del modello sul set di verifica
+    accuracy = clf.score(X_val, y_val)
+    print(f'Accuracy on validation set: {accuracy}')
+
+    # Estrai le feature più importanti
+    feature_importance = clf.feature_importances_
+
+    # Crea un DataFrame con le feature e le relative importanze
+    feature_importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': feature_importance})
+
+    if removeNotImportantFeature:
+        # Rimuovi le features con importanza 0
+        non_zero_importance_df = feature_importance_df[feature_importance_df['Importance'] > 0]
+        return non_zero_importance_df
+    else:
+        return feature_importance_df
 
 def sort_df_features(df, colonna_target='target'):
     # Verifica se la colonna del target esiste nel DataFrame
@@ -93,7 +130,11 @@ df = pd.read_csv(csv_file_path, index_col=0)
 feature_extracted_features_df=extract_feature_with_decisiontree(df,removeNotImportantFeature=True)
 # feature_extracted_features_sorted=extract_feature_with_decisiontree(sort_df_features(df,'target'),removeNotImportantFeature=True)
 
-print(feature_extracted_features_df)
+print(feature_extracted_features_df.sort_values('Importance', ascending=False))
+
+# print(extract_feature_with_decisiontree_simple(df,removeNotImportantFeature=True).sort_values('Importance'))
+
+exit(0)
 
 non_zero_columns = feature_extracted_features_df['Feature'].tolist()
 # Seleziona solo le colonne desiderate nel DataFrame originale

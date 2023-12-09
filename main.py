@@ -2,6 +2,14 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
+from sklearn.tree import export_graphviz
+import graphviz
+from IPython.display import Image  
+from sklearn import tree
+import pydotplus
+
+
+
 def extract_feature_with_decisiontree_old(df, removeNotImportantFeature=True):
     # Estrai le colonne delle features e della variabile target
     features_columns = df.columns[:-1]
@@ -81,6 +89,18 @@ def extract_feature_with_decisiontree(df, target_column="target", removeNotImpor
     accuracy = clf.score(X_val, y_val)
     print(f'Accuracy on validation set: {accuracy}')
 
+
+    dot_data = export_graphviz(clf, out_file=None, 
+                            feature_names=X.columns,
+                            class_names=['0', '1'],
+                            filled=True, rounded=True, special_characters=True)  
+
+    graph = graphviz.Source(dot_data)  
+    graph.render("decision_tree")  # Salva l'immagine come 'decision_tree.pdf' o 'decision_tree.png'
+    graph.view("decision_tree")   # Apri l'immagine con il visualizzatore predefinito
+
+
+
     # Estrai le feature più importanti
     feature_importance = clf.feature_importances_
 
@@ -90,9 +110,13 @@ def extract_feature_with_decisiontree(df, target_column="target", removeNotImpor
     if removeNotImportantFeature:
         # Rimuovi le features con importanza 0
         non_zero_importance_df = feature_importance_df[feature_importance_df['Importance'] > 0]
+        print(non_zero_importance_df['Feature'].tolist())
+
         return non_zero_importance_df
     else:
         return feature_importance_df
+
+
 
 def sort_df_features(df, colonna_target='target'):
     # Verifica se la colonna del target esiste nel DataFrame
